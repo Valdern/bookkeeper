@@ -1,28 +1,51 @@
-from PySide6 import QtWidgets, QtGui
-from PySide6.QtWidgets import QMainWindow
-from budget import BudgetWidget
-from expense import ExpenseWidget
+from typing import Any
 
+from PySide6        import QtWidgets
+from PySide6.QtCore import QEvent  # pylint: disable=no-name-in-module
 
-class MainWindow(QMainWindow):
+from bookkeeper.view.budget_table  import LabeledBudgetTable
+from bookkeeper.view.expense_table import LabeledExpenseTable
+from bookkeeper.view.new_expense   import NewExpense
 
-    BOOKKEEPER_APP_LOGO_PATH: str = "../../../../GitHub_Коля/bookkeeper/resources/logo.png"
+# pylint: disable=too-few-public-methods
+class MainWindow(QtWidgets.QWidget):
+    def __init__(
+        self,
+        budget_table  : LabeledBudgetTable,
+        new_expense   : NewExpense,
+        expense_table : LabeledExpenseTable,
+        *args         : Any,
+        **kwargs      : Any
+    ):
+        super().__init__(*args, **kwargs)
 
-    def __init__(self):
-        super().__init__()
-
+        # Window options:
         self.setWindowTitle("Bookkeeper")
-        window_icon = QtGui.QIcon()
-        window_icon.addFile(self.BOOKKEEPER_APP_LOGO_PATH)
-        self.setWindowIcon(window_icon)
 
-        self.expense_widget = ExpenseWidget()
-        self.budget_widget = BudgetWidget()
+        # Window internal widgets:
+        self.budget_table  = budget_table
+        self.new_expense   = new_expense
+        self.expense_table = expense_table
 
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.expense_widget)
-        layout.addWidget(self.budget_widget)
+        # Vertical layout:
+        self.vbox = QtWidgets.QVBoxLayout()
 
-        box = QtWidgets.QGroupBox()
-        box.setLayout(layout)
-        self.setCentralWidget(box)
+        self.vbox.addWidget(self.budget_table,  stretch=3)
+        self.vbox.addWidget(self.new_expense,   stretch=1)
+        self.vbox.addWidget(self.expense_table, stretch=6)
+
+        self.setLayout(self.vbox)
+
+    def closeEvent(self, event: QEvent) -> None:  # pylint: disable=invalid-name
+        # Spawn a messagebox:
+        reply = QtWidgets.QMessageBox.question(self,
+            "Закрыть приложение",
+            "Вы уверены?\nВсе несохраненные данные будут потеряны.")
+
+        # Parse Yes/No reply:
+        if reply == QtWidgets.QMessageBox.Yes:  # type: ignore
+            event.accept()
+            app = QtWidgets.QApplication.instance()
+            app.closeAllWindows()  # type: ignore
+        else:
+            event.ignore()

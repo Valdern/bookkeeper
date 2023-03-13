@@ -34,6 +34,10 @@ class MemoryRepository(AbstractRepository[T]):
         return [obj for obj in self._container.values()
                 if all(getattr(obj, attr) == value for attr, value in where.items())]
 
+    def get_all_by_pattern(self, patterns: dict[str, str]) -> list[T]:
+        return [obj for obj in self._container.values()
+                if all(value in getattr(obj, attr) for attr, value in patterns.items())]
+
     def update(self, obj: T) -> None:
         if obj.pk == 0:
             raise ValueError('attempt to update object with unknown primary key')

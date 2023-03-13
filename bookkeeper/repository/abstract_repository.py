@@ -52,9 +52,37 @@ class AbstractRepository(ABC, Generic[T]):
         """
 
     @abstractmethod
+    def get_all_by_pattern(self, patterns: dict[str, str]) -> list[T]:
+        """
+        Получить все записи по некоторому условию
+        pattern - условие в виде словаря {'название_поля': значение},
+        где значение имеет тип строки и для выполнения условия
+        переданное значение должно содержаться внутри реального
+        значения поля.
+        """
+
+    @abstractmethod
     def update(self, obj: T) -> None:
         """ Обновить данные об объекте. Объект должен содержать поле pk. """
 
     @abstractmethod
     def delete(self, pk: int) -> None:
         """ Удалить запись """
+
+def repository_factory(
+    repo_type : Any,
+    db_file   : str | None = None
+) -> Callable[[Model], Any]:
+    """
+    Конкретная фабрика абстрактных репозиториев:
+    больше абстракции богу абстракции!
+    """
+
+    if db_file is None:
+        def repo_gen_nofile(model: Model) -> Any:
+            return repo_type[model](cls=model)
+        return repo_gen_nofile
+
+    def repo_gen_withfile(model: Model) -> Any:
+        return repo_type[model](db_file=db_file, cls=model)
+    return repo_gen_withfile
